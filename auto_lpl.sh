@@ -11,15 +11,12 @@ current_date=$(date +%Y-%m-%d)
 python3 LPL_T.py
 python3 convert_to_ics.py
 
-git add LPL_T.py convert_to_ics.py auto_lpl.sh README.md .gitignore LPL赛程.ics BLG赛程.ics
-if [ -f json.json ]; then
-  git add json.json
-fi
-
 if git diff --cached --quiet; then
   echo "没有检测到变更，跳过提交和推送。"
   exit 0
 fi
+
+git add .
 
 git commit -m "LPL $current_date"
 git push
