@@ -2,66 +2,80 @@ import requests
 import json
 import networkx as nx
 from pathlib import Path
+import shutil
 
 BASE_DIR = Path(__file__).resolve().parent
+RAW_DIR = BASE_DIR / "raw"
+MATCH_LIST_URLS = [
+    "https://lpl.qq.com/web201612/data/LOL_MATCH2_MATCH_HOMEPAGE_BMATCH_LIST_237.js",
+    "https://lpl.qq.com/web201612/data/LOL_MATCH2_MATCH_HOMEPAGE_BMATCH_LIST_239.js",
+]
 
-def fetch_and_parse_lpl_data(url):
+def normalize_payload(content):
+    """把接口返回内容尽量整理成标准 JSON 字符串"""
+    content = content.strip()
+    if content.startswith("var"):
+        content = content.split('=', 1)[1].strip().rstrip(';')
+    return json.loads(content)
+
+def fetch_and_save_raw_json(url, output_path):
+    """下载接口并保存原始 JSON"""
     try:
-        # 1. 获取数据
         response = requests.get(url)
         response.raise_for_status()
-        
-        # 腾讯有些接口返回的其实是 JS 脚本(包含 var=)，这里做简单的清洗
-        content = response.text.strip()
-        if content.startswith("var"):
-            content = content.split('=', 1)[1].strip().rstrip(';')
-            
-        data = json.loads(content)
-        
-        # --- 新增：保存原始 JSON 到本地 ---
-        with open(BASE_DIR / 'json.json', 'w', encoding='utf-8') as f:
-            # indent=4 让文件带缩进，方便肉眼观察；ensure_ascii=False 保留中文
+        data = normalize_payload(response.text)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        print("✅ 原始数据已成功保存至本地：json.json")
-        # -------------------------------
+        print(f"✅ 原始数据已成功保存至本地：{output_path.relative_to(BASE_DIR)}")
+        return data
 
+    except Exception as e:
+        print(f"下载或保存失败: {e}")
+        return None
 
-        # 2. 使用字典存储不同类型的图 { "GameTypeName": DiGraph }
-        group_graphs = {}
-        
+def clear_raw_dir(raw_dir):
+    """下载前清空 raw 目录，确保只保留本次抓取的数据"""
+    if raw_dir.exists():
+        shutil.rmtree(raw_dir)
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+def load_and_parse_lpl_data(json_paths):
+    """统一读取多个本地 JSON 文件并合并解析"""
+    group_graphs = {}
+
+    for json_path in json_paths:
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"解析失败: {json_path.name} -> {e}")
+            continue
+
         matches = data.get("msg", [])
-        
+
         for match in matches:
-            # --- 关键改进：将所有 Key 转换为小写，解决大小写敏感问题 ---
             m = {k.lower(): v for k, v in match.items()}
-            
-            # 过滤：只统计已完成的比赛 (MatchStatus 通常为 "3")
+
             if m.get("matchstatus") != "3":
                 continue
-                
-            # 直接按 GameTypeName 分组
+
             group_name = m.get("gametypename", "未分类赛段")
             team_a = m.get("teamshortnamea") or "未知A"
             team_b = m.get("teamshortnameb") or "未知B"
-            win_side = m.get("matchwin") # "1" 代表 TeamA 胜, "2" 代表 TeamB 胜
-            
-            # 如果该组别还没创建图，则初始化
+            win_side = m.get("matchwin")
+
             if group_name not in group_graphs:
                 group_graphs[group_name] = nx.DiGraph()
-            
+
             target_graph = group_graphs[group_name]
 
-            # 建立胜负关系：胜者 -> 败者
             if win_side == "1":
                 target_graph.add_edge(team_a, team_b)
             elif win_side == "2":
                 target_graph.add_edge(team_b, team_a)
-        
-        return group_graphs
 
-    except Exception as e:
-        print(f"解析失败: {e}")
-        return None
+    return group_graphs
 
 def display_results(group_graphs):
     if not group_graphs:
@@ -88,8 +102,16 @@ def display_results(group_graphs):
                 print(f" {group_name}  环路({len(cycle)}): {' -> '.join(cycle)} -> {cycle[0]}")
 
 if __name__ == "__main__":
-    # 目标 URL
-    target_url = "https://lpl.qq.com/web201612/data/LOL_MATCH2_MATCH_HOMEPAGE_BMATCH_LIST_237.js"
+    raw_urls = MATCH_LIST_URLS
+    raw_paths = []
 
-    graphs = fetch_and_parse_lpl_data(target_url)
+    clear_raw_dir(RAW_DIR)
+
+    for index, url in enumerate(raw_urls, start=1):
+        output_path = RAW_DIR / f"json{index}.json"
+        data = fetch_and_save_raw_json(url, output_path)
+        if data is not None:
+            raw_paths.append(output_path)
+
+    graphs = load_and_parse_lpl_data(raw_paths)
     display_results(graphs)

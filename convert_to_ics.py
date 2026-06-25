@@ -17,9 +17,9 @@ UID 设计规则：
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from collections import OrderedDict
 
 BASE_DIR = Path(__file__).resolve().parent
+RAW_DIR = BASE_DIR / "raw"
 
 def parse_score(value):
     """把比分字段尽量转成整数，失败时返回 None"""
@@ -102,6 +102,36 @@ def parse_existing_events(ics_path):
             current[key] = unescape_ics_text(value)
 
     return events
+
+def load_merged_json_data(raw_dir):
+    """读取 raw 目录下所有 json*.json 并合并成一个数据集"""
+    merged_matches = []
+    seen_match_ids = set()
+
+    if not raw_dir.exists():
+        return {"msg": []}
+
+    for json_path in sorted(raw_dir.glob("json*.json")):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"⚠️ 跳过损坏文件 {json_path.name}: {e}")
+            continue
+
+        for match in data.get("msg", []):
+            match_id = match.get("bMatchId")
+            if match_id in seen_match_ids:
+                continue
+            seen_match_ids.add(match_id)
+            merged_matches.append(match)
+
+    merged_matches.sort(key=lambda match: (
+        parse_datetime(match.get("MatchDate", "")) or datetime.max,
+        str(match.get("bMatchId", "")),
+    ))
+
+    return {"msg": merged_matches}
 
 def generate_uid(match):
     """为每场比赛生成唯一 UID
@@ -343,9 +373,12 @@ def convert_json_to_ics(json_file, ics_file, team_filter=None, calendar_name=Non
     return event_count
 
 if __name__ == "__main__":
-    json_file = BASE_DIR / "json.json"
-
     try:
+        data = load_merged_json_data(RAW_DIR)
+        json_file = BASE_DIR / "json.json"
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
         # 生成全部赛程
         ics_file_all = BASE_DIR / "LPL赛程.ics"
         count_all = convert_json_to_ics(json_file, ics_file_all)
