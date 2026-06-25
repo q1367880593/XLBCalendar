@@ -67,6 +67,8 @@ python3 convert_to_ics.py
 - `convert_to_ics.py` 会先合并 `raw/` 下的 JSON，并按 `MatchDate` 排序，再把每场比赛写成一个日历事件
 - `UID` 使用 `bMatchId` 生成，方便日历应用识别同一场比赛并更新事件
 - `SEQUENCE` 用来区分未开始和已结束比赛
+- 日历标题前缀会根据 `GameName` / `GameTypeName` 自动映射，例如 `LPL`、`FST`、`MSI`
+- 如果 `TeamShortNameA` / `TeamShortNameB` 缺失，会尝试从 `bMatchName` 中按 `vs` 解析队伍名
 
 ## 注意事项
 

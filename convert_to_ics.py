@@ -20,6 +20,11 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "raw"
+GAME_PREFIX_RULES = [
+    ("职业联赛", "LPL"),
+    ("全球先锋赛", "FST"),
+    ("季中冠军赛", "MSI"),
+]
 
 def parse_score(value):
     """把比分字段尽量转成整数，失败时返回 None"""
@@ -34,6 +39,34 @@ def parse_datetime(date_str):
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
     except:
         return None
+
+def get_game_prefix(match):
+    """根据 GameName / GameTypeName 映射赛事前缀"""
+    game_name = str(match.get("GameName") or match.get("GameTypeName") or "")
+    for keyword, prefix in GAME_PREFIX_RULES:
+        if keyword in game_name:
+            return prefix
+    return "LPL"
+
+def parse_teams(match):
+    """优先读取队伍简称，缺失时从 bMatchName 兜底解析"""
+    team_a = str(match.get("TeamShortNameA") or "").strip()
+    team_b = str(match.get("TeamShortNameB") or "").strip()
+
+    if team_a and team_b:
+        return team_a, team_b
+
+    match_name = str(match.get("bMatchName") or "")
+    if "vs" in match_name:
+        left, right = match_name.split("vs", 1)
+        left = left.strip()
+        right = right.strip()
+        if not team_a:
+            team_a = left
+        if not team_b:
+            team_b = right
+
+    return team_a or "未知A", team_b or "未知B"
 
 def format_ics_datetime(dt):
     """将 datetime 转换为 iCalendar 格式 (本地时间)"""
@@ -163,10 +196,9 @@ def create_ics_event(match):
     match_end = match_date + duration
 
     # 构建比赛标题 - 格式：LPL: TES vs WE 17:00
-    team_a = match.get('TeamShortNameA', '')
-    team_b = match.get('TeamShortNameB', '')
+    team_a, team_b = parse_teams(match)
     match_time = match_date.strftime("%H:%M")
-    summary = f"LPL: {team_a} vs {team_b} {match_time}"
+    summary = f"{get_game_prefix(match)}: {team_a} vs {team_b} {match_time}"
 
     # 构建比赛描述
     description_parts = []
@@ -229,10 +261,9 @@ def create_ics_event_with_history(match, previous_event=None):
     duration = timedelta(hours=3) if game_mode == 'BO5' else timedelta(hours=2)
     match_end = match_date + duration
 
-    team_a = match.get('TeamShortNameA', '')
-    team_b = match.get('TeamShortNameB', '')
+    team_a, team_b = parse_teams(match)
     match_time = match_date.strftime("%H:%M")
-    summary = f"LPL: {team_a} vs {team_b} {match_time}"
+    summary = f"{get_game_prefix(match)}: {team_a} vs {team_b} {match_time}"
 
     description_parts = [
         f"{match.get('bMatchName', '')}",

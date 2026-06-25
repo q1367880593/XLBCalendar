@@ -11,6 +11,11 @@ MATCH_LIST_URLS = [
     "https://lpl.qq.com/web201612/data/LOL_MATCH2_MATCH_HOMEPAGE_BMATCH_LIST_238.js",
     "https://lpl.qq.com/web201612/data/LOL_MATCH2_MATCH_HOMEPAGE_BMATCH_LIST_239.js",
 ]
+GAME_PREFIX_RULES = [
+    ("职业联赛", "LPL"),
+    ("全球先锋赛", "FST"),
+    ("季中冠军赛", "MSI"),
+]
 
 def normalize_payload(content):
     """把接口返回内容尽量整理成标准 JSON 字符串"""
@@ -18,6 +23,34 @@ def normalize_payload(content):
     if content.startswith("var"):
         content = content.split('=', 1)[1].strip().rstrip(';')
     return json.loads(content)
+
+def parse_teams(match):
+    """优先读取队伍简称，缺失时从 bMatchName 兜底解析"""
+    team_a = str(match.get("TeamShortNameA") or "").strip()
+    team_b = str(match.get("TeamShortNameB") or "").strip()
+
+    if team_a and team_b:
+        return team_a, team_b
+
+    match_name = str(match.get("bMatchName") or "")
+    if "vs" in match_name:
+        left, right = match_name.split("vs", 1)
+        left = left.strip()
+        right = right.strip()
+        if not team_a:
+            team_a = left
+        if not team_b:
+            team_b = right
+
+    return team_a or "未知A", team_b or "未知B"
+
+def get_game_prefix(match):
+    """根据 GameName / GameTypeName 映射赛事前缀"""
+    game_name = str(match.get("GameName") or match.get("GameTypeName") or "")
+    for keyword, prefix in GAME_PREFIX_RULES:
+        if keyword in game_name:
+            return prefix
+    return "LPL"
 
 def fetch_and_save_raw_json(url, output_path):
     """下载接口并保存原始 JSON"""
@@ -62,8 +95,7 @@ def load_and_parse_lpl_data(json_paths):
                 continue
 
             group_name = m.get("gametypename", "未分类赛段")
-            team_a = m.get("teamshortnamea") or "未知A"
-            team_b = m.get("teamshortnameb") or "未知B"
+            team_a, team_b = parse_teams(m)
             win_side = m.get("matchwin")
 
             if group_name not in group_graphs:
@@ -101,7 +133,8 @@ def display_results(group_graphs):
             print(f"\n💡 发现逻辑环（互克关系）:")
             for cycle in cycles:
                 if len(cycle) > 2:
-                    print(f" {group_name}  环路({len(cycle)}): {' -> '.join(cycle)} -> {cycle[0]}")
+                    cycle_text = " -> ".join(str(item) for item in cycle)
+                    print(f" {group_name}  环路({len(cycle)}): {cycle_text} -> {cycle[0]}")
 
 if __name__ == "__main__":
     raw_urls = MATCH_LIST_URLS
