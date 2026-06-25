@@ -436,7 +436,7 @@ if __name__ == "__main__":
             json_file,
             ics_file_blg,
             team_filter="BLG",
-            calendar_name="LPL BLG 赛程"
+            calendar_name="BLG 赛程"
         )
         print(f"✓ 成功转换 BLG 赛程 {count_blg} 场比赛")
         print(f"✓ 已保存到: {ics_file_blg}")
