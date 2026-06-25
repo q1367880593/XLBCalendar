@@ -130,6 +130,38 @@ def load_and_parse_lpl_data(json_paths):
 
     return group_graphs
 
+def merge_raw_json_files(raw_paths, merged_path):
+    """把多个 raw JSON 合并成一个 json.json，统一给后续流程使用"""
+    merged_matches = []
+    seen_match_ids = set()
+
+    for json_path in raw_paths:
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception as e:
+            print(f"合并失败: {json_path.name} -> {e}")
+            continue
+
+        for match in data.get("msg", []):
+            match_id = match.get("bMatchId")
+            if match_id in seen_match_ids:
+                continue
+            seen_match_ids.add(match_id)
+            merged_matches.append(match)
+
+    merged_matches.sort(key=lambda match: (
+        str(get_field(match, "MatchDate", default="")),
+        str(get_field(match, "bMatchId", default="")),
+    ))
+
+    merged_data = {"msg": merged_matches}
+    with open(merged_path, 'w', encoding='utf-8') as f:
+        json.dump(merged_data, f, ensure_ascii=False, indent=4)
+
+    print(f"✅ 已合并生成: {merged_path.relative_to(BASE_DIR)}")
+    return merged_path
+
 def display_results(group_graphs):
     if not group_graphs:
         print("没有找到匹配的对局数据。")
@@ -160,6 +192,7 @@ def display_results(group_graphs):
 if __name__ == "__main__":
     raw_urls = MATCH_LIST_URLS
     raw_paths = []
+    merged_json_path = BASE_DIR / "json.json"
 
     clear_raw_dir(RAW_DIR)
 
@@ -169,5 +202,8 @@ if __name__ == "__main__":
         if data is not None:
             raw_paths.append(output_path)
 
-    graphs = load_and_parse_lpl_data(raw_paths)
+    if raw_paths:
+        merge_raw_json_files(raw_paths, merged_json_path)
+
+    graphs = load_and_parse_lpl_data([merged_json_path] if merged_json_path.exists() else [])
     display_results(graphs)
