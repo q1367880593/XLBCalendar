@@ -24,15 +24,25 @@ def normalize_payload(content):
         content = content.split('=', 1)[1].strip().rstrip(';')
     return json.loads(content)
 
+def get_field(match, *names, default=""):
+    """按多个字段名依次取值，兼容大小写和不同来源字段"""
+    for name in names:
+        if name in match and match.get(name):
+            return match.get(name)
+        lower_name = name.lower()
+        if lower_name in match and match.get(lower_name):
+            return match.get(lower_name)
+    return default
+
 def parse_teams(match):
     """优先读取队伍简称，缺失时从 bMatchName 兜底解析"""
-    team_a = str(match.get("TeamShortNameA") or "").strip()
-    team_b = str(match.get("TeamShortNameB") or "").strip()
+    team_a = str(get_field(match, "TeamShortNameA", default="")).strip()
+    team_b = str(get_field(match, "TeamShortNameB", default="")).strip()
 
     if team_a and team_b:
         return team_a, team_b
 
-    match_name = str(match.get("bMatchName") or "")
+    match_name = str(get_field(match, "bMatchName", default=""))
     if "vs" in match_name:
         left, right = match_name.split("vs", 1)
         left = left.strip()
@@ -46,9 +56,17 @@ def parse_teams(match):
 
 def get_game_prefix(match):
     """根据 GameName / GameTypeName 映射赛事前缀"""
-    game_name = str(match.get("GameName") or match.get("GameTypeName") or "")
+    game_name = str(get_field(match, "GameName", "GameTypeName", default=""))
     for keyword, prefix in GAME_PREFIX_RULES:
         if keyword in game_name:
+            return prefix
+    return "LPL"
+
+def get_group_prefix(group_name):
+    """根据赛段名称映射前缀，找不到时默认 LPL"""
+    group_text = str(group_name or "")
+    for keyword, prefix in GAME_PREFIX_RULES:
+        if keyword in group_text:
             return prefix
     return "LPL"
 
@@ -116,7 +134,8 @@ def display_results(group_graphs):
         return
 
     for group_name, G in group_graphs.items():
-        print(f"\n================ [{group_name}] 拓扑结构 ================")
+        group_prefix = get_group_prefix(group_name)
+        print(f"\n================ [{group_prefix} {group_name}] 拓扑结构 ================")
         if not G.edges:
             print("该赛段暂无已完成数据。")
             continue
@@ -125,7 +144,7 @@ def display_results(group_graphs):
         for winner, loser in G.edges():
             winner_text = str(winner)
             loser_text = str(loser)
-            print(f"  {winner_text.ljust(6)}  ➔   {loser_text}")
+            print(f"  {group_prefix}: {winner_text.ljust(6)}  ➔   {loser_text}")
         
         # 检查循环克制关系（环）
         cycles = list(nx.simple_cycles(G))
@@ -134,7 +153,7 @@ def display_results(group_graphs):
             for cycle in cycles:
                 if len(cycle) > 2:
                     cycle_text = " -> ".join(str(item) for item in cycle)
-                    print(f" {group_name}  环路({len(cycle)}): {cycle_text} -> {cycle[0]}")
+                    print(f" {group_prefix} {group_name}  环路({len(cycle)}): {cycle_text} -> {cycle[0]}")
 
 if __name__ == "__main__":
     raw_urls = MATCH_LIST_URLS
