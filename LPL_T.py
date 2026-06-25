@@ -52,7 +52,7 @@ def parse_teams(match):
         if not team_b:
             team_b = right
 
-    return team_a or "未知A", team_b or "未知B"
+    return team_a or "TBDA", team_b or "TBDB"
 
 def get_game_prefix(match):
     """根据 GameName / GameTypeName 映射赛事前缀"""

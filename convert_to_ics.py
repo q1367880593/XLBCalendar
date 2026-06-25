@@ -76,7 +76,7 @@ def parse_teams(match):
         if not team_b:
             team_b = right
 
-    return team_a or "未知A", team_b or "未知B"
+    return team_a or "TBDA", team_b or "TBDB"
 
 def format_ics_datetime(dt):
     """将 datetime 转换为 iCalendar 格式 (本地时间)"""
