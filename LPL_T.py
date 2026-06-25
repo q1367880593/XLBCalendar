@@ -112,7 +112,9 @@ def load_and_parse_lpl_data(json_paths):
             if m.get("matchstatus") != "3":
                 continue
 
-            group_name = m.get("gametypename", "未分类赛段")
+            group_name = m.get("gamename", "")
+            group_name = group_name + m.get("gametypename", "未分类赛段").strip()
+
             team_a, team_b = parse_teams(m)
             win_side = m.get("matchwin")
 

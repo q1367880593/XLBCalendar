@@ -69,6 +69,7 @@ python3 convert_to_ics.py
 - `SEQUENCE` 用来区分未开始和已结束比赛
 - 日历标题前缀会根据 `GameName` / `GameTypeName` 自动映射，例如 `LPL`、`FST`、`MSI`
 - 如果 `TeamShortNameA` / `TeamShortNameB` 缺失，会尝试从 `bMatchName` 中按 `vs` 解析队伍名
+- 拓扑结构输出也会带同样的赛事前缀，方便区分不同赛事来源
 
 ## 注意事项
 
