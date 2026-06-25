@@ -21,4 +21,4 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "LPL $current_date"
-git push
+git push origin main
