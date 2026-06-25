@@ -100,7 +100,8 @@ def display_results(group_graphs):
         if cycles:
             print(f"\n💡 发现逻辑环（互克关系）:")
             for cycle in cycles:
-                print(f" {group_name}  环路({len(cycle)}): {' -> '.join(cycle)} -> {cycle[0]}")
+                if len(cycle) > 2:
+                    print(f" {group_name}  环路({len(cycle)}): {' -> '.join(cycle)} -> {cycle[0]}")
 
 if __name__ == "__main__":
     raw_urls = MATCH_LIST_URLS
