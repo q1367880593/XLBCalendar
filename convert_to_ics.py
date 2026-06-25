@@ -366,7 +366,7 @@ def convert_json_to_ics(json_file, ics_file, team_filter=None, calendar_name=Non
         json_file: JSON 源文件路径
         ics_file: 输出的 ICS 文件路径
         team_filter: 可选，队伍名称过滤（如 "BLG"），只包含该队伍的比赛
-        calendar_name: 可选，日历名称，默认为 "LPL 2026 赛程"
+        calendar_name: 可选，日历名称，默认为 "LPL 赛程"
     """
     # 读取 JSON 文件
     with open(json_file, 'r', encoding='utf-8') as f:
@@ -376,10 +376,10 @@ def convert_json_to_ics(json_file, ics_file, team_filter=None, calendar_name=Non
 
     # 设置日历名称和描述
     if calendar_name is None:
-        calendar_name = "LPL 2026 赛程"
-        calendar_desc = "英雄联盟职业联赛 2026 赛季赛程"
+        calendar_name = "LPL 赛程"
+        calendar_desc = "英雄联盟LPL职业联赛 & 世界赛赛程"
     else:
-        calendar_desc = f"英雄联盟职业联赛 2026 赛季 {calendar_name}"
+        calendar_desc = f"英雄联盟LPL职业联赛 & 世界赛赛程 {calendar_name}"
 
     # 开始构建 ICS 文件
     ics_content = []
@@ -436,7 +436,7 @@ if __name__ == "__main__":
             json_file,
             ics_file_blg,
             team_filter="BLG",
-            calendar_name="LPL 2026 BLG 赛程"
+            calendar_name="LPL BLG 赛程"
         )
         print(f"✓ 成功转换 BLG 赛程 {count_blg} 场比赛")
         print(f"✓ 已保存到: {ics_file_blg}")
