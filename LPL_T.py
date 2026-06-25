@@ -51,7 +51,12 @@ def parse_teams(match):
             team_a = left
         if not team_b:
             team_b = right
-
+    
+    # 如果解析出来的team_a == team_b 直接返回默认值
+    if team_a == team_b:
+        team_a = "TBDA"
+        team_b = "TBDB"
+    
     return team_a or "TBDA", team_b or "TBDB"
 
 def get_game_prefix(match):
