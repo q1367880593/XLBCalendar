@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLBCalendar</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card-hover: #222633;
+    --border: #2a2e3d;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --accent3: #fd79a8;
+    --text: #e2e8f0;
+    --text-dim: #8892a4;
+    --code-bg: #12141d;
+    --gradient: linear-gradient(135deg, #6c5ce7, #00cec9);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 5rem 1.5rem 4rem;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 30% 20%, rgba(108,92,231,.15), transparent),
+      radial-gradient(ellipse 500px 350px at 70% 60%, rgba(0,206,201,.1), transparent);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: .3rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: .78rem;
+    color: var(--text-dim);
+    letter-spacing: .04em;
+    margin-bottom: 1.5rem;
+    background: rgba(255,255,255,.03);
+  }
+  .hero-badge span {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 600;
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -.03em;
+    margin-bottom: .75rem;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* Grid decoration */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  /* Section */
+  .section {
+    margin-top: 3rem;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .section-icon.purple { background: rgba(108,92,231,.15); }
+  .section-icon.teal   { background: rgba(0,206,201,.15); }
+  .section-icon.pink   { background: rgba(253,121,168,.15); }
+  .section-icon.amber  { background: rgba(253,203,110,.15); }
+  .section-icon.blue   { background: rgba(116,185,255,.15); }
+  .section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  /* Feature Cards */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.25rem 1rem;
+    transition: background .2s, border-color .2s, transform .2s;
+  }
+  .feature-card:hover {
+    background: var(--card-hover);
+    border-color: rgba(108,92,231,.3);
+    transform: translateY(-2px);
+  }
+  .feature-card .icon {
+    font-size: 1.5rem;
+    margin-bottom: .6rem;
+  }
+  .feature-card h3 {
+    font-size: .92rem;
+    font-weight: 600;
+    margin-bottom: .35rem;
+  }
+  .feature-card p {
+    font-size: .82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* File list */
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+  }
+  .file-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    transition: border-color .2s;
+  }
+  .file-item:hover { border-color: rgba(0,206,201,.3); }
+  .file-ext {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .2rem .5rem;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: .15rem;
+    letter-spacing: .05em;
+  }
+  .file-ext.py { background: rgba(0,206,201,.15); color: #00cec9; }
+  .file-ext.sh { background: rgba(253,203,110,.15); color: #fdcb6e; }
+  .file-ext.git { background: rgba(253,121,168,.15); color: #fd79a8; }
+  .file-info strong {
+    display: block;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .15rem;
+  }
+  .file-info span {
+    font-size: .82rem;
+    color: var(--text-dim);
+  }
+
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem 1rem;
+    background: rgba(255,255,255,.02);
+    border-bottom: 1px solid var(--border);
+    font-size: .78rem;
+    color: var(--text-dim);
+  }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+  .code-block pre {
+    padding: 1.1rem 1.25rem;
+    margin: 0;
+    overflow-x: auto;
+  }
+  .code-block code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: .85rem;
+    color: #a8b4c8;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .code-block .kw { color: #c792ea; }
+  .code-block .cmd { color: #82aaff; }
+  .code-block .flag { color: #f78c6c; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .comment { color: #546e7a; font-style: italic; }
+
+  /* Output tags */
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1rem;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .4rem .85rem;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: border-color .2s;
+  }
+  .tag:hover { border-color: rgba(108,92,231,.4); }
+  .tag .dot-sm {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .tag.json .dot-sm { background: #fdcb6e; }
+  .tag.ics .dot-sm { background: #00cec9; }
+
+  /* Logic / Timeline */
+  .logic-list {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .logic-list::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: .5rem;
+    bottom: .5rem;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2));
+    border-radius: 2px;
+    opacity: .3;
+  }
+  .logic-item {
+    position: relative;
+    padding: .55rem 0 .55rem .75rem;
+    font-size: .88rem;
+    color: var(--text-dim);
+  }
+  .logic-item::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: .95rem;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--accent);
+  }
+  .logic-item code {
+    background: rgba(108,92,231,.12);
+    color: #a78bfa;
+    padding: .1em .45em;
+    border-radius: 4px;
+    font-size: .84em;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* Warning */
+  .warning-box {
+    display: flex;
+    gap: .75rem;
+    background: rgba(253,203,110,.05);
+    border: 1px solid rgba(253,203,110,.2);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .warning-box .warn-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+  .warning-box ul {
+    list-style: none;
+    padding: 0;
+  }
+  .warning-box li {
+    font-size: .85rem;
+    color: var(--text-dim);
+    padding: .2rem 0;
+  }
+  .warning-box li::before { display: none; }
+  .warning-box code {
+    background: rgba(253,203,110,.1);
+    color: #fdcb6e;
+    padding: .1em .4em;
+    border-radius: 4px;
+    font-size: .84em;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    border: none;
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+  }
+  .flow-step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .9rem;
+    font-size: .82rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    color: var(--text-dim);
+    font-size: 1rem;
+    opacity: .4;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 3rem 0 1rem;
+    font-size: .78rem;
+    color: var(--text-dim);
+    opacity: .5;
+  }
+
+  @media (max-width: 600px) {
+    .hero { padding: 3.5rem 1rem 3rem; }
+    .hero h1 { font-size: 2rem; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .wrapper { padding: 0 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-badge">🏆 <span>LPL</span> · <span>Calendar</span> · <span>Automation</span></div>
+  <h1>XLBCalendar</h1>
+  <p>一个把 LPL 赛程自动整理成日历文件的工具</p>
+</header>
+
+<div class="wrapper">
+
+  <!-- Flow Overview -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon purple">⚡</div>
+      <h2>工作流程</h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step">📡 腾讯 LPL 接口</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">📦 原始 JSON</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">🔗 合并解析</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">📅 ICS 日历</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">📲 导入应用</div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon teal">✨</div>
+      <h2>核心功能</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">📡</div>
+        <h3>自动拉取</h3>
+        <p>从腾讯 LPL 接口获取最新比赛数据，保存原始 JSON 到 raw/ 目录</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔀</div>
+        <h3>数据合并</h3>
+        <p>统一读取多源 JSON，按比赛日期排序后合并为完整数据集</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📅</div>
+        <h3>ICS 日历</h3>
+        <p>生成标准 .ics 文件，可直接导入系统日历、Apple 日历、Google 日历</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎯</div>
+        <h3>双日历输出</h3>
+        <p>LPL 全量赛程 + BLG 专属赛程，满足不同观赛需求</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>赛段统计</h3>
+        <p>按赛段自动统计队伍胜负关系，生成可视化拓扑结构</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔄</div>
+        <h3>一键部署</h3>
+        <p>auto_lpl.sh 脚本集成拉取、生成、提交、推送全流程</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Files -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon pink">📁</div>
+      <h2>项目文件</h2>
+    </div>
+    <div class="file-list">
+      <div class="file-item">
+        <span class="file-ext py">PY</span>
+        <div class="file-info">
+          <strong>LPL_T.py</strong>
+          <span>拉取 LPL 接口数据 → 保存原始 JSON → 解析比赛结果 → 按赛段统计胜负 → 控制台输出日志</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <span class="file-ext py">PY</span>
+        <div class="file-info">
+          <strong>convert_to_ics.py</strong>
+          <span>读取 raw/ 下 JSON → 合并排序 → 转换为 .ics 日历 → 生成全量 & BLG 双日历</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <span class="file-ext sh">SH</span>
+        <div class="file-info">
+          <strong>auto_lpl.sh</strong>
+          <span>一键执行数据拉取、日历生成、git 提交和推送</span>
+        </div>
+      </div>
+      <div class="file-item">
+        <span class="file-ext git">GI</span>
+        <div class="file-info">
+          <strong>.gitignore</strong>
+          <span>忽略缓存文件和中间产物</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon amber">▶️</div>
+      <h2>运行方式</h2>
+    </div>
+    <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:1rem;">确保本机有 Python 环境，可使用 <code style="background:rgba(108,92,231,.12);color:#a78bfa;padding:.1em .4em;border-radius:4px;font-size:.84em;font-family:'SF Mono',Menlo,Consolas,monospace;">python3</code> 命令。</p>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span>一键执行</span>
+      </div>
+      <pre><code><span class="cmd">bash</span> <span class="str">auto_lpl.sh</span></code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span>分步执行</span>
+      </div>
+      <pre><code><span class="comment"># 第一步：拉取数据</span>
+<span class="cmd">python3</span> <span class="str">LPL_T.py</span>
+
+<span class="comment"># 第二步：生成日历</span>
+<span class="cmd">python3</span> <span class="str">convert_to_ics.py</span></code></pre>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">📄</div>
+      <h2>输出文件</h2>
+    </div>
+    <div class="tag-row">
+      <div class="tag json"><span class="dot-sm"></span>raw/json1.json</div>
+      <div class="tag json"><span class="dot-sm"></span>raw/json2.json</div>
+      <div class="tag json"><span class="dot-sm"></span>json.json</div>
+      <div class="tag ics"><span class="dot-sm"></span>LPL赛程.ics</div>
+      <div class="tag ics"><span class="dot-sm"></span>BLG赛程.ics</div>
+    </div>
+  </div>
+
+  <!-- Logic -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon purple">🧠</div>
+      <h2>核心逻辑</h2>
+    </div>
+    <div class="logic-list">
+      <div class="logic-item">只统计 <code>MatchStatus == "3"</code> 的比赛，即已结束的比赛</div>
+      <div class="logic-item">合并 <code>raw/</code> 下 JSON 后按 <code>MatchDate</code> 排序，逐场写入日历事件</div>
+      <div class="logic-item"><code>UID</code> 基于 <code>bMatchId</code> 生成，方便日历应用识别与更新同一事件</div>
+      <div class="logic-item"><code>SEQUENCE</code> 用于区分未开始和已结束比赛状态</div>
+      <div class="logic-item">日历标题前缀根据 <code>GameName</code> / <code>GameTypeName</code> 自动映射（<code>LPL</code>、<code>FST</code>、<code>MSI</code>）</div>
+      <div class="logic-item">队伍名缺失时从 <code>bMatchName</code> 中按 <code>vs</code> 自动解析</div>
+      <div class="logic-item">拓扑结构输出同样携带赛事前缀，便于区分来源</div>
+    </div>
+  </div>
+
+  <!-- Warnings -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon amber">⚠️</div>
+      <h2>注意事项</h2>
+    </div>
+    <div class="warning-box">
+      <span class="warn-icon">💡</span>
+      <ul>
+        <li>接口字段名变更时，脚本可能需要同步调整</li>
+        <li>每次运行前 <code>raw/</code> 会被清空，仅保留本次抓取的数据</li>
+        <li><code>raw/</code> 中的 JSON 为中间产物，默认不提交到仓库</li>
+        <li><code>json.json</code> 为合并后的中间产物，默认不提交到仓库</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">XLBCalendar · LPL Schedule to Calendar</div>
+</div>
+
+</body>
+</html>
