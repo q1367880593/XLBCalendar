@@ -22,3 +22,5 @@ fi
 
 git commit -m "LPL $current_date"
 git push origin main
+
+exit 0
