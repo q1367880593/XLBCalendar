@@ -24,6 +24,7 @@ GAME_PREFIX_RULES = [
     ("职业联赛", "LPL"),
     ("全球先锋赛", "FST"),
     ("季中冠军赛", "MSI"),
+    ("2026全球总决赛", "S"),
 ]
 
 def parse_score(value):
